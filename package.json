@@ -1,0 +1,13 @@
+{
+  "name": "industrial-safety-monitor-root",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Industrial Safety Monitor - Sistema de monitoramento em tempo real com ESP32",
+  "scripts": {
+    "dev": "npm run dev --prefix Teste_Site_IAstudio",
+    "build": "npm run build --prefix Teste_Site_IAstudio",
+    "start": "npm run dev --prefix Teste_Site_IAstudio",
+    "test:sensor": "powershell -ExecutionPolicy Bypass -File ./Teste_Site_IAstudio/test-sensor.ps1",
+    "test:impacto": "powershell -ExecutionPolicy Bypass -File ./Teste_Site_IAstudio/test-sensor.ps1 -Impacto"
+  }
+}
