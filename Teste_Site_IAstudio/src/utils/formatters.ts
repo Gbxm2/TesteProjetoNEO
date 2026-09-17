@@ -34,6 +34,8 @@ export function formatCpf(value: string): string {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
+export const formatCPF = formatCpf;
+
 /**
  * Valida se um e-mail possui sintaxe válida (RFC 5322 básica)
  */

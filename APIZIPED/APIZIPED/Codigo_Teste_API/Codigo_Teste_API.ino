@@ -43,9 +43,8 @@ WebServer server(80);
 // API EXTERNA
 // ============================================================
 
-// Altere para o IPv4 do computador onde o Safety Monitor está rodando.
-// IP atual na sua rede Wi-Fi: 192.168.0.110 (ou Ethernet: 192.168.0.109)
-const char* apiURL = "http://192.168.0.110:3000/api/dados";
+// IP atual da sua maquina na rede local: 192.168.0.109
+const char* apiURL = "http://192.168.0.109:3000/api/dados";
 
 const unsigned long INTERVALO_API = 1000;
 unsigned long ultimoEnvioAPI = 0;

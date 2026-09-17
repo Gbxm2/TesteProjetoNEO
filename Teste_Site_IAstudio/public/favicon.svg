@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Fundo sutil para contraste -->
+  <rect width="64" height="64" rx="16" fill="#09090b" />
+  
+  <!-- Brilho / Halo de Inteligência (Luz Emitida pelo Sensor IoT) -->
+  <defs>
+    <radialGradient id="smartGlow" cx="50%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.9" />
+      <stop offset="50%" stop-color="#0284c7" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="helmetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="60%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+    <linearGradient id="crestGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+
+  <!-- Feixe de Luz / Inteligência IoT -->
+  <circle cx="32" cy="18" r="14" fill="url(#smartGlow)" />
+  <path d="M32 4 L32 10 M22 8 L25 13 M42 8 L39 13" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" opacity="0.85" />
+
+  <!-- Casco do Capacete Industrial (EPI) -->
+  <path d="M14 38 C14 24 22 18 32 18 C42 18 50 24 50 38 Z" fill="url(#helmetGrad)" />
+
+  <!-- Crista / Nervura Superior de Reforço -->
+  <path d="M30 18 C30 16 34 16 34 18 L35 36 L29 36 Z" fill="url(#crestGrad)" opacity="0.9" />
+
+  <!-- Luz Frontal do Sensor Inteligente (Farol / LED de Telemetria) -->
+  <circle cx="32" cy="27" r="4.5" fill="#0f172a" />
+  <circle cx="32" cy="27" r="3" fill="#38bdf8" />
+  <circle cx="31" cy="26" r="1" fill="#ffffff" />
+
+  <!-- Aba Protetora do Capacete EPI -->
+  <path d="M10 38 C10 36 12 36 15 36 L49 36 C52 36 54 36 54 38 C54 41 50 42 47 42 L17 42 C14 42 10 41 10 38 Z" fill="#b45309" />
+  <path d="M12 38 L52 38 C53 39 49 41 46 41 L18 41 C15 41 11 39 12 38 Z" fill="#f59e0b" />
+
+  <!-- Detalhe da Carneira / Tira de Proteção (Base) -->
+  <path d="M22 42 L22 47 C22 51 42 51 42 47 L42 42" stroke="#475569" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.7" />
+  <circle cx="32" cy="49" r="2" fill="#38bdf8" />
+</svg>

@@ -15,14 +15,23 @@ import {
   MapPin,
   Volume2,
   Zap,
-  Gauge
+  Gauge,
+  Users,
+  Shield,
+  FileCheck2,
+  Crown,
+  Building2,
+  Eye,
+  Database
 } from "lucide-react";
-import { Employee, SystemStats, RecentActivity, UserProfile } from "../types";
+import { Employee, SystemStats, RecentActivity, UserProfile, UserRole } from "../types";
+import { isSupabaseConfigured } from "../services/supabaseClient";
 import { motion, AnimatePresence } from "motion/react";
 import ProfileModal from "./ProfileModal";
 
 interface DashboardProps {
   username: string;
+  userRole: UserRole;
   employees: Employee[];
   stats: SystemStats;
   activities: RecentActivity[];
@@ -30,17 +39,26 @@ interface DashboardProps {
   onNavigateToMap: () => void;
   onLogout: () => void;
   onUpdateUser: (updated: UserProfile) => Promise<boolean>;
+  onOpenHelmetModal: () => void;
+  onOpenEmployeeModal: () => void;
+  onOpenUserModal: () => void;
+  onOpenAnalyticsModal: () => void;
 }
 
 export default function Dashboard({ 
   username, 
+  userRole,
   employees, 
   stats, 
   activities, 
   currentUser, 
   onNavigateToMap, 
   onLogout,
-  onUpdateUser 
+  onUpdateUser,
+  onOpenHelmetModal,
+  onOpenEmployeeModal,
+  onOpenUserModal,
+  onOpenAnalyticsModal
 }: DashboardProps) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -48,6 +66,9 @@ export default function Dashboard({
   // Capacete conectado principal (EMP001 vinculado ao ESP32)
   const connectedHelmet = employees.find(e => e.id === "EMP001" && e.status !== "OFFLINE") || employees.find(e => e.status !== "OFFLINE") || null;
   const telemetry = connectedHelmet?.telemetry;
+
+  const isSupabase = isSupabaseConfigured();
+  const effectiveRole = currentUser.role || userRole;
 
   const formatDate = () => {
     const now = new Date();
@@ -62,32 +83,120 @@ export default function Dashboard({
 
   const isEmergency = stats.systemStatus === "EMERGENCY" || stats.emergenciesToday > 0;
 
+  const getRoleBadge = () => {
+    switch (effectiveRole) {
+      case "MASTER":
+        return (
+          <span className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-yellow-500/10 text-yellow-400 border border-yellow-500/30">
+            <Crown className="w-3.5 h-3.5 text-yellow-500" />
+            Admin Master
+          </span>
+        );
+      case "COMPANY_ADMIN":
+        return (
+          <span className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/30">
+            <Building2 className="w-3.5 h-3.5 text-blue-400" />
+            Admin Empresa
+          </span>
+        );
+      case "VIEWER":
+      default:
+        return (
+          <span className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700">
+            <Eye className="w-3.5 h-3.5 text-zinc-400" />
+            Visualizador
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-zinc-950 text-white flex flex-col font-sans">
-      {/* Header */}
-      <header className="h-16 px-6 flex items-center justify-between border-b border-white/5 bg-zinc-950/50 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="w-6 h-6 text-yellow-500" />
-          <span className="text-lg font-bold tracking-tight">Safety Monitor</span>
+      {/* Top Header */}
+      <header className="h-16 px-6 flex items-center justify-between border-b border-white/5 bg-zinc-950/80 backdrop-blur-md sticky top-0 z-50">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <AlertTriangle className="w-6 h-6 text-yellow-500" />
+            <span className="text-lg font-bold tracking-tight">Safety Monitor</span>
+          </div>
+
+          {/* Role Badge */}
+          {getRoleBadge()}
+
+          {/* Supabase Status Indicator */}
+          <span 
+            className={`hidden lg:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-mono font-semibold border ${
+              isSupabase 
+                ? "bg-green-500/10 text-green-400 border-green-500/30" 
+                : "bg-amber-500/10 text-amber-400 border-amber-500/30"
+            }`}
+            title={isSupabase ? "Conectado ao Supabase PostgreSQL Cloud" : "Operando em modo de Armazenamento Local Inteligente (LocalStorage)"}
+          >
+            <Database className="w-3 h-3" />
+            {isSupabase ? "Supabase Nuvem" : "Modo Local Resiliente"}
+          </span>
         </div>
+
+        {/* Central Navigation Action Shortcuts */}
+        <nav className="hidden md:flex items-center gap-1.5">
+          <button
+            onClick={onOpenHelmetModal}
+            className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 hover:border-yellow-500/30 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all"
+          >
+            <HardHat className="w-3.5 h-3.5 text-yellow-500" />
+            <span>Capacetes</span>
+          </button>
+
+          <button
+            onClick={onOpenEmployeeModal}
+            className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 hover:border-yellow-500/30 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all"
+          >
+            <Users className="w-3.5 h-3.5 text-yellow-500" />
+            <span>Funcionários</span>
+          </button>
+
+          {effectiveRole !== "VIEWER" && (
+            <button
+              onClick={onOpenUserModal}
+              className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 hover:border-yellow-500/30 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all"
+            >
+              <Shield className="w-3.5 h-3.5 text-yellow-500" />
+              <span>Usuários RBAC</span>
+            </button>
+          )}
+
+          <button
+            onClick={onOpenAnalyticsModal}
+            className="px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-white/5 hover:border-yellow-500/30 text-zinc-300 hover:text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all"
+          >
+            <FileCheck2 className="w-3.5 h-3.5 text-yellow-500" />
+            <span>Normas & Laudos</span>
+          </button>
+
+          <button
+            onClick={onNavigateToMap}
+            className="px-3.5 py-1.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-black text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md"
+          >
+            <MapIcon className="w-3.5 h-3.5" />
+            <span>Mapa ao Vivo</span>
+          </button>
+        </nav>
         
-        <div className="flex items-center gap-6">
-          <div className="relative cursor-pointer">
-            <Bell className="w-5 h-5 text-zinc-400" />
+        <div className="flex items-center gap-5">
+          <div className="relative cursor-pointer" onClick={onOpenAnalyticsModal} title="Visualizar Alertas e Normas">
+            <Bell className="w-5 h-5 text-zinc-400 hover:text-white transition-colors" />
             {stats.emergenciesToday > 0 && (
               <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 text-[10px] flex items-center justify-center rounded-full font-bold animate-pulse">
                 {stats.emergenciesToday}
               </span>
             )}
           </div>
-          <Settings className="w-5 h-5 text-zinc-400 cursor-pointer" />
           
           <div className="relative">
             <div 
               onClick={() => setShowDropdown(!showDropdown)}
               className="flex items-center gap-2 cursor-pointer group"
             >
-              <User className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" />
               <div className="w-8 h-8 rounded-full border-2 border-yellow-500/50 flex items-center justify-center bg-zinc-900 text-yellow-500 font-bold text-sm group-hover:border-yellow-500 transition-all">
                 {(currentUser.firstName || username).charAt(0).toUpperCase()}
               </div>
@@ -104,30 +213,85 @@ export default function Dashboard({
                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-56 bg-zinc-900 border border-white/10 rounded-xl shadow-2xl z-20 overflow-hidden"
+                    className="absolute right-0 mt-2 w-64 bg-zinc-900 border border-white/10 rounded-2xl shadow-2xl z-20 overflow-hidden"
                   >
-                    <div className="p-3 border-b border-white/5">
-                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Usuário Conectado</p>
+                    <div className="p-4 border-b border-white/5 bg-zinc-950/40">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Sessão Ativa</p>
+                        {getRoleBadge()}
+                      </div>
                       <p className="text-sm font-bold text-white truncate">{currentUser.firstName} {currentUser.lastName}</p>
                       <p className="text-xs text-zinc-400 font-mono">@{currentUser.username}</p>
                     </div>
-                    <button
-                      onClick={() => {
-                        setShowDropdown(false);
-                        setShowProfileModal(true);
-                      }}
-                      className="w-full flex items-center gap-3 p-3 text-sm text-yellow-400 hover:bg-yellow-500/10 transition-colors text-left"
-                    >
-                      <User className="w-4 h-4" />
-                      <span className="font-bold uppercase tracking-widest text-[10px]">Ver Meu Perfil</span>
-                    </button>
-                    <button
-                      onClick={onLogout}
-                      className="w-full flex items-center gap-3 p-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors text-left border-t border-white/5"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span className="font-bold uppercase tracking-widest text-[10px]">Desconectar</span>
-                    </button>
+
+                    <div className="p-2 space-y-1">
+                      <button
+                        onClick={() => {
+                          setShowDropdown(false);
+                          setShowProfileModal(true);
+                        }}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                      >
+                        <User className="w-4 h-4 text-yellow-500" />
+                        <span className="font-bold uppercase tracking-wider text-[10px]">Meu Perfil</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowDropdown(false);
+                          onOpenHelmetModal();
+                        }}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                      >
+                        <HardHat className="w-4 h-4 text-yellow-500" />
+                        <span className="font-bold uppercase tracking-wider text-[10px]">Gestão de Capacetes</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          setShowDropdown(false);
+                          onOpenEmployeeModal();
+                        }}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                      >
+                        <Users className="w-4 h-4 text-yellow-500" />
+                        <span className="font-bold uppercase tracking-wider text-[10px]">Gestão de Operadores</span>
+                      </button>
+
+                      {effectiveRole !== "VIEWER" && (
+                        <button
+                          onClick={() => {
+                            setShowDropdown(false);
+                            onOpenUserModal();
+                          }}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                        >
+                          <Shield className="w-4 h-4 text-yellow-500" />
+                          <span className="font-bold uppercase tracking-wider text-[10px]">Controle de Usuários</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          setShowDropdown(false);
+                          onOpenAnalyticsModal();
+                        }}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs text-zinc-300 hover:text-white hover:bg-white/5 transition-colors text-left"
+                      >
+                        <FileCheck2 className="w-4 h-4 text-yellow-500" />
+                        <span className="font-bold uppercase tracking-wider text-[10px]">Normas & Laudos TCC</span>
+                      </button>
+                    </div>
+
+                    <div className="p-2 border-t border-white/5">
+                      <button
+                        onClick={onLogout}
+                        className="w-full flex items-center gap-3 p-2.5 rounded-xl text-xs text-red-400 hover:bg-red-500/10 transition-colors text-left"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span className="font-bold uppercase tracking-wider text-[10px]">Desconectar</span>
+                      </button>
+                    </div>
                   </motion.div>
                 </>
               )}
@@ -138,8 +302,8 @@ export default function Dashboard({
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col">
-        {/* Welcome Section with Background */}
-        <div className="relative h-[280px] flex flex-col justify-end p-8 overflow-hidden">
+        {/* Welcome Banner */}
+        <div className="relative h-[260px] flex flex-col justify-end p-8 overflow-hidden">
           <div 
             className="absolute inset-0 bg-cover bg-center"
             style={{ 
@@ -149,27 +313,46 @@ export default function Dashboard({
           />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent" />
           
-          <div className="relative z-10 flex justify-between items-end">
+          <div className="relative z-10 flex flex-col md:flex-row justify-between md:items-end gap-4">
             <div>
-              <p className="text-zinc-400 text-sm font-medium uppercase tracking-widest mb-1">Bem-vindo,</p>
-              <h1 className="text-5xl font-bold text-yellow-500 mb-2">{currentUser.firstName ? `${currentUser.firstName} (${username})` : username}</h1>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest">Painel de Operações •</p>
+                <span className="text-yellow-500 text-xs font-bold uppercase tracking-widest">
+                  {effectiveRole === "MASTER" ? "👑 Admin Master" : effectiveRole === "COMPANY_ADMIN" ? "🏢 Admin Empresa" : "👁️ Modo Visualizador"}
+                </span>
+              </div>
+              <h1 className="text-4xl md:text-5xl font-bold text-yellow-500 mb-2">
+                {currentUser.firstName ? `${currentUser.firstName} (${username})` : username}
+              </h1>
               <p className="text-zinc-500 text-xs font-bold tracking-[0.2em]">{formatDate()}</p>
             </div>
 
-            <button
-              onClick={() => setShowProfileModal(true)}
-              className="hidden md:flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white transition-all backdrop-blur-md"
-            >
-              <User className="w-4 h-4 text-yellow-500" />
-              <span>Gerenciar Perfil</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={onOpenAnalyticsModal}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white transition-all backdrop-blur-md"
+              >
+                <FileCheck2 className="w-4 h-4 text-yellow-500" />
+                <span>Normas NR-06 & NR-12</span>
+              </button>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-zinc-900/80 hover:bg-zinc-800 border border-white/10 text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white transition-all backdrop-blur-md"
+              >
+                <User className="w-4 h-4 text-yellow-500" />
+                <span>Meu Perfil</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Stats Grid - DADOS REAIS */}
         <div className="p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 -mt-10 relative z-20">
           {/* Active Helmets */}
-          <div className="bg-zinc-900/90 backdrop-blur-xl p-6 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg">
+          <div 
+            onClick={onOpenHelmetModal}
+            className="bg-zinc-900/90 backdrop-blur-xl p-6 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg hover:border-white/20 transition-all cursor-pointer group"
+          >
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <div className={`w-2 h-2 rounded-full ${isEmergency ? "bg-red-500 animate-pulse" : "bg-green-500"}`} />
@@ -177,7 +360,9 @@ export default function Dashboard({
                   {isEmergency ? "Alerta Ativo" : "Sistema Nominal"}
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">Active Helmet</h3>
+              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider group-hover:text-white transition-colors">
+                Capacetes Ativos
+              </h3>
             </div>
             <div className="text-4xl font-bold text-white">
               <span className="text-green-500 mr-1">+</span>{stats.activeHelmets}
@@ -185,9 +370,12 @@ export default function Dashboard({
           </div>
 
           {/* Emergencies */}
-          <div className="bg-zinc-900/90 backdrop-blur-xl p-6 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg">
+          <div 
+            onClick={onOpenAnalyticsModal}
+            className="bg-zinc-900/90 backdrop-blur-xl p-6 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg hover:border-white/20 transition-all cursor-pointer group"
+          >
             <div>
-              <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Emergências</span>
+              <span className="text-[10px] font-bold text-red-500 uppercase tracking-widest">Emergências Hoje</span>
               <div className="mt-3 w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
                 <AlertTriangle className="w-5 h-5 text-red-500" />
               </div>
@@ -196,7 +384,7 @@ export default function Dashboard({
               <div className={`text-4xl font-bold ${stats.emergenciesToday > 0 ? "text-red-500 animate-pulse" : "text-white"}`}>
                 {stats.emergenciesToday}
               </div>
-              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">EPI Afetados</span>
+              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Incidentes</span>
             </div>
           </div>
 
@@ -218,23 +406,24 @@ export default function Dashboard({
           </div>
 
           {/* Disconnected Helmets */}
-          <div className="bg-zinc-900/90 backdrop-blur-xl p-6 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg">
+          <div 
+            onClick={onOpenHelmetModal}
+            className="bg-zinc-900/90 backdrop-blur-xl p-6 rounded-2xl border border-white/5 flex justify-between items-center shadow-lg hover:border-white/20 transition-all cursor-pointer group"
+          >
             <div>
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Capacetes Desconectados</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Capacetes em Espera</span>
               <div className="mt-3">
                 <Plug className="w-8 h-8 text-red-500" />
               </div>
             </div>
             <div className="text-right">
               <div className="text-4xl font-bold text-white font-mono">{stats.disconnectedHelmets}</div>
-              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Em Espera</span>
+              <span className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Almoxarifado</span>
             </div>
           </div>
         </div>
 
-        {/* ============================================================ */}
-        {/* TELEMETRIA AO VIVO DO ESP32 NA TELA PRINCIPAL               */}
-        {/* ============================================================ */}
+        {/* Telemetria ao Vivo do ESP32 na Tela Principal */}
         <div className="px-8 pb-8">
           <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-6 shadow-xl backdrop-blur-md">
             <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 mb-6 border-b border-white/5 gap-4">
@@ -244,10 +433,10 @@ export default function Dashboard({
                 </div>
                 <div>
                   <h2 className="text-base font-bold text-white tracking-wide">
-                    Telemetria ao Vivo do Dispositivo ESP32
+                    Telemetria ao Vivo do Dispositivo ESP32 (Hardware IoT)
                   </h2>
                   <p className="text-xs text-zinc-400">
-                    Operador Vinculado: <span className="text-yellow-400 font-semibold">{connectedHelmet?.name || "Gabriel Araújo (EMP001)"}</span> • IP: <span className="font-mono text-zinc-300">{telemetry?.ip || "192.168.0.122"}</span>
+                    Operador Vinculado: <span className="text-yellow-400 font-semibold">{connectedHelmet?.name || "Gabriel Araújo (EMP001)"}</span> • IP Local: <span className="font-mono text-zinc-300">{telemetry?.ip || "192.168.0.122"}</span>
                   </p>
                 </div>
               </div>
@@ -267,7 +456,7 @@ export default function Dashboard({
               </div>
             </div>
 
-            {/* Grid de Sensores da Tela Principal */}
+            {/* Grid de Sensores */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Força G Atual */}
               <div className="bg-zinc-950/70 p-4 rounded-xl border border-white/5">
@@ -295,7 +484,6 @@ export default function Dashboard({
                   </span>
                   <span className="text-sm font-bold text-zinc-500 font-mono">/100</span>
                 </div>
-                {/* Barra de progresso */}
                 <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden mt-3">
                   <div 
                     className={`h-full transition-all duration-300 ${
@@ -356,13 +544,13 @@ export default function Dashboard({
           </div>
         </div>
 
-        {/* Bottom Sections */}
-        <div className="px-8 pb-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Atividades Recentes - REAIS */}
+        {/* Bottom Sections: Atividades & Atalhos de Controle */}
+        <div className="px-8 pb-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Atividades Recentes */}
           <section>
             <div className="flex items-center gap-2 mb-6">
               <Bell className="w-4 h-4 text-zinc-500" />
-              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Atividades Recentes</h2>
+              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Atividades & Histórico</h2>
             </div>
             <div className="space-y-3">
               {activities.length > 0 ? activities.slice(0, 5).map(act => (
@@ -392,42 +580,76 @@ export default function Dashboard({
             </div>
           </section>
 
-          {/* Control Section */}
+          {/* Módulos do Sistema */}
           <section>
             <div className="flex items-center gap-2 mb-6">
               <Monitor className="w-4 h-4 text-zinc-500" />
-              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Controle do Sistema</h2>
+              <h2 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">Módulos Administrativos</h2>
             </div>
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Capacetes */}
               <button 
-                onClick={onNavigateToMap}
-                className="w-full bg-zinc-900/40 hover:bg-zinc-800/60 p-4 rounded-xl border border-white/5 flex items-center gap-6 transition-all group"
+                onClick={onOpenHelmetModal}
+                className="bg-zinc-900/40 hover:bg-zinc-800/60 p-4 rounded-xl border border-white/5 flex items-center gap-4 transition-all text-left group"
               >
-                <div className="w-16 h-12 rounded-lg overflow-hidden relative">
-                  <div 
-                    className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:opacity-80 transition-opacity"
-                    style={{ backgroundImage: `url('https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?q=80&w=2066&auto=format&fit=crop')` }}
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <MapIcon className="w-5 h-5 text-white" />
-                  </div>
+                <div className="w-10 h-10 rounded-xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center shrink-0">
+                  <HardHat className="w-5 h-5 text-yellow-500" />
                 </div>
-                <div className="text-left">
-                  <span className="text-sm font-bold text-zinc-200 uppercase tracking-widest block">Mapa de Segurança</span>
-                  <span className="text-[10px] text-zinc-500">Visualizar capacetes conectados com posicionamento geográfico</span>
+                <div>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider block group-hover:text-yellow-400 transition-colors">
+                    Capacetes
+                  </span>
+                  <span className="text-[10px] text-zinc-500">Firmware & Inspeção</span>
                 </div>
               </button>
 
+              {/* Funcionários */}
               <button 
-                onClick={() => setShowProfileModal(true)}
-                className="w-full bg-zinc-900/40 hover:bg-zinc-800/60 p-4 rounded-xl border border-white/5 flex items-center gap-6 transition-all group"
+                onClick={onOpenEmployeeModal}
+                className="bg-zinc-900/40 hover:bg-zinc-800/60 p-4 rounded-xl border border-white/5 flex items-center gap-4 transition-all text-left group"
               >
-                <div className="w-16 h-12 rounded-lg bg-zinc-800 flex items-center justify-center">
-                  <HardHat className="w-6 h-6 text-yellow-500" />
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                  <Users className="w-5 h-5 text-blue-400" />
                 </div>
-                <div className="text-left">
-                  <span className="text-sm font-bold text-zinc-200 uppercase tracking-widest block">Perfil do Usuário</span>
-                  <span className="text-[10px] text-zinc-500">Consultar credenciais, cargo e departamento</span>
+                <div>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider block group-hover:text-blue-300 transition-colors">
+                    Operadores
+                  </span>
+                  <span className="text-[10px] text-zinc-500">RH & Turnos</span>
+                </div>
+              </button>
+
+              {/* Usuários RBAC */}
+              {effectiveRole !== "VIEWER" && (
+                <button 
+                  onClick={onOpenUserModal}
+                  className="bg-zinc-900/40 hover:bg-zinc-800/60 p-4 rounded-xl border border-white/5 flex items-center gap-4 transition-all text-left group"
+                >
+                  <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0">
+                    <Shield className="w-5 h-5 text-purple-400" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-white uppercase tracking-wider block group-hover:text-purple-300 transition-colors">
+                      Acessos RBAC
+                    </span>
+                    <span className="text-[10px] text-zinc-500">Master & Permissões</span>
+                  </div>
+                </button>
+              )}
+
+              {/* Normas & Laudos */}
+              <button 
+                onClick={onOpenAnalyticsModal}
+                className="bg-zinc-900/40 hover:bg-zinc-800/60 p-4 rounded-xl border border-white/5 flex items-center gap-4 transition-all text-left group"
+              >
+                <div className="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center shrink-0">
+                  <FileCheck2 className="w-5 h-5 text-green-400" />
+                </div>
+                <div>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider block group-hover:text-green-300 transition-colors">
+                    Normas & Laudos
+                  </span>
+                  <span className="text-[10px] text-zinc-500">NR-06, NR-12 & TCC</span>
                 </div>
               </button>
             </div>
@@ -437,12 +659,12 @@ export default function Dashboard({
         {/* Footer */}
         <footer className="p-8 text-center border-t border-white/5 mt-auto">
           <p className="text-[10px] text-zinc-600 uppercase tracking-widest">
-            © 2026 Safety Monitor. Sistema Industrial em Tempo Real.
+            © 2026 Industrial Safety Monitor • Monitoramento de Segurança e Telemetria em Tempo Real
           </p>
         </footer>
       </main>
 
-      {/* Modal de Perfil Real do Usuário */}
+      {/* Modal de Perfil do Usuário */}
       <ProfileModal
         isOpen={showProfileModal}
         onClose={() => setShowProfileModal(false)}

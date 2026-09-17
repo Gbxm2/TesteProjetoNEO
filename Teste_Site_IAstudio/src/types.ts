@@ -1,5 +1,9 @@
 export type EmployeeStatus = "ONLINE" | "OFFLINE" | "EMERGENCY" | "UNSTABLE" | "INACTIVE";
 
+export type UserRole = "MASTER" | "COMPANY_ADMIN" | "VIEWER";
+
+export type HelmetStatus = "AVAILABLE" | "IN_USE" | "MAINTENANCE" | "INACTIVE";
+
 export interface EmployeeTelemetry {
   aceleracao?: number;
   aceleracaoG?: number;
@@ -20,6 +24,20 @@ export interface EmployeeTelemetry {
   ip?: string;
 }
 
+export interface Helmet {
+  id: string;
+  serialNumber: string;
+  macAddress?: string;
+  firmwareVersion?: string;
+  battery: number;
+  status: HelmetStatus;
+  lastCalibration?: string;
+  nextInspection?: string;
+  assignedEmployeeId?: string | null;
+  assignedEmployeeName?: string | null;
+  companyId?: string;
+}
+
 export interface Employee {
   id: string;
   name: string;
@@ -29,8 +47,21 @@ export interface Employee {
   lastSeen: number;
   battery: number;
   active?: boolean;
+  cpf?: string;
+  matricula?: string;
+  roleFunction?: string;
   department?: string;
+  shift?: string;
+  emergencyContact?: string;
+  assignedHelmetId?: string | null;
+  assignedHelmetSerial?: string | null;
   telemetry?: EmployeeTelemetry;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  cnpj?: string;
 }
 
 export interface SystemStats {
@@ -55,6 +86,7 @@ export interface UserProfile {
   firstName: string;
   lastName: string;
   username: string;
+  role?: UserRole;
   cpf: string;
   position: string;
   department: string;
@@ -63,8 +95,12 @@ export interface UserProfile {
 }
 
 export interface UserRecord extends UserProfile {
+  id?: string;
+  role: UserRole;
+  password?: string;
   active: boolean;
-  createdAt?: number;
+  createdAt?: number | string;
+  companyId?: string;
 }
 
 export interface AccidentEvent {
@@ -80,6 +116,19 @@ export interface AccidentEvent {
   vibracao: boolean;
   som: boolean;
   acknowledged: boolean;
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+}
+
+export interface SafetyGuideline {
+  id: string;
+  code: string;
+  title: string;
+  description: string;
+  category: string;
+  complianceStatus: "CONFORME" | "ATENCAO" | "CRITICO";
+  lastAudit?: string;
+  details?: Record<string, any>;
 }
 
 export interface WebSocketMessage {
