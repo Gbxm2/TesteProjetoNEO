@@ -24,7 +24,7 @@ echo Iniciando o servidor web e a API na porta 3000...
 echo Acesse no seu navegador: http://localhost:3000
 echo.
 
-cd /d "%~dp0Teste_Site_IAstudio"
+cd /d "%~dp0"
 npm run dev
 
 if %ERRORLEVEL% NEQ 0 (
